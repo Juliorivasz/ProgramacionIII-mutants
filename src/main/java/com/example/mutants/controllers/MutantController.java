@@ -20,6 +20,13 @@ public class MutantController {
 
     @PostMapping("/")
     public ResponseEntity<String> isMutant(@RequestBody DnaRequest dnaRequest) {
+
+        if (!isValidDna(dnaRequest.getDna())) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("EL ADN INGRESADO NO ES VALIDO, DEBE TENER SOLO 'A,C,G,T' ");
+        }else if (!isDnaNxN(dnaRequest.getDna())) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("El ADN INGRESADO NO ES VALIDO, DEBE SER NXN");
+        }
+
         boolean isMutant = mutantService.isMutant(dnaRequest.getDna());
 
         // Guardar ADN verificado en la base de datos
@@ -37,6 +44,29 @@ public class MutantController {
     @GetMapping("/stats")
     public StatsResponse getStats() {
         return statsService.getStats();
+    }
+
+    private boolean isValidDna(String[] dna) {
+        String validChars = "ATCG";
+        for (String row : dna) {
+            for (char base : row.toCharArray()) {
+                if (validChars.indexOf(base) == -1) {
+                    return false; // Si encuentra una letra que no es A, T, C o G, retorna falso
+                }
+            }
+        }
+
+        return true;
+    }
+
+    private boolean isDnaNxN (String[] dna) {
+        int n = dna.length;
+        for (String row : dna) {
+            if (row.length() != n) {
+                return false; // No es una matriz NxN
+            }
+        }
+        return true;
     }
 }
 
