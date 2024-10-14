@@ -1,14 +1,14 @@
-# Usa una imagen base de Java 17
-FROM openjdk:17-jdk-slim
+FROM alpine:latest as build
 
-# Añade un argumento para tu .jar
-ARG JAR_FILE=build/libs/tu-aplicacion.jar
+RUN apk update
+RUN apk add openjdk17
 
-# Copia el .jar al contenedor
-COPY ${JAR_FILE} app.jar
+COPY . .
+RUN chmod +x ./gradlew
+RUN ./gradlew bootJar --no-daemon
 
-# Expone el puerto
-EXPOSE 8080
+FROM openjdk:17-alpine
+EXPOSE 9000
+COPY --from=build ./build/libs/demo-app-0.0.1-SNAPSHOT.jar ./app.jar
 
-# Comando para ejecutar la aplicación
-ENTRYPOINT ["java", "-jar", "/app.jar"]
+ENTRYPOINT ["java", "-jar", "app.jar"]
