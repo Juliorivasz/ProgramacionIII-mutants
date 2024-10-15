@@ -143,12 +143,9 @@ La respuesta de la API sera el codigo de estado: **403-Forbidden**
 
 ### Diagrama de Secuencia
 - El siguiente diagrama muestra el flujo de interacción entre el cliente y la API:
-   ```
-   Cliente -> API: POST /mutant/
-   API -> Detector: isMutant(dna)
-   Detector -> BD: Guardar resultado
-   BD -> API: Confirmación
-   API -> Cliente: Resultado (200 OK o 403 Forbidden)
+- se encuentra en el archivo llamado .puml esta el codigo para la creacion del diagrama
+
+![img.png](img.png)
 
 ### Arquitectura del sistema
 1. El sistema está compuesto por los siguientes componentes:

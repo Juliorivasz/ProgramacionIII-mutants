@@ -1,0 +1,78 @@
+@startuml Mutants
+actor Cliente
+actor Tester
+
+Cliente -> MutantController : POST /mutant/ (ADN)
+alt Verificar si el ADN es válido
+    MutantController -> MutantController : isValidDna(dnaRequest.getDna())
+    MutantController -> MutantController : isDnaNxN(dnaRequest.getDna())
+end
+alt Si el ADN no es válido
+    MutantController -> Cliente : BAD_REQUEST (400)
+else Si el ADN es válido
+    MutantController -> MutantService : isMutant(dnaRequest.getDna())
+    MutantService -> MutantService : Análisis de secuencias (horizontales, verticales, diagonales)
+    MutantService --> MutantController : resultado (true/false)
+    
+    alt Es mutante
+        MutantController -> MutantService : saveDna(dnaRequest.getDna(), true)
+        MutantController -> StatsService : incrementMutantCount()
+        StatsService --> MutantController : confirmación
+        MutantController --> Cliente : HTTP 200 OK (Mutante)
+    else No es mutante
+        MutantController -> MutantService : saveDna(dnaRequest.getDna(), false)
+        MutantController -> StatsService : incrementHumanCount()
+        StatsService --> MutantController : confirmación
+        MutantController --> Cliente : HTTP 403 Forbidden (No mutante)
+    end
+end
+
+== Obtener estadísticas ==
+Cliente -> MutantController : GET /stats
+MutantController -> StatsService : getStats()
+StatsService --> MutantController : StatsResponse (countMutantDna, countHumanDna, ratio)
+MutantController --> Cliente : StatsResponse (JSON)
+
+== Test Automático MutantController ==
+Tester -> MutantController : Ejecutar testIsMutant_withInvalidDnaCharacters()
+MutantController -> MutantController : isValidDna(dnaRequest.getDna())
+MutantController --> Tester : BAD_REQUEST (400)
+
+Tester -> MutantController : Ejecutar testIsMutant_withInvalidDnaSize()
+MutantController -> MutantController : isDnaNxN(dnaRequest.getDna())
+MutantController --> Tester : BAD_REQUEST (400)
+
+Tester -> MutantController : Ejecutar testIsMutant_withValidMutantDna()
+MutantController -> MutantService : isMutant(dnaRequest.getDna())
+MutantService --> MutantController : true
+MutantController -> StatsService : incrementMutantCount()
+MutantController --> Tester : HTTP 200 OK (Mutante)
+
+Tester -> MutantController : Ejecutar testIsMutant_withValidNonMutantDna()
+MutantController -> MutantService : isMutant(dnaRequest.getDna())
+MutantService --> MutantController : false
+MutantController -> StatsService : incrementHumanCount()
+MutantController --> Tester : HTTP 403 Forbidden (No mutante)
+
+== Test Automático MutantService ==
+Tester -> MutantService : Ejecutar testIsMutant_WithMutantDna()
+MutantService -> MutantService : Análisis de secuencias
+MutantService --> Tester : true
+
+Tester -> MutantService : Ejecutar testIsMutant_WithNonMutantDna()
+MutantService -> MutantService : Análisis de secuencias
+MutantService --> Tester : false
+
+Tester -> MutantService : Ejecutar testSaveDna_WhenDnaDoesNotExist()
+MutantService -> DnaRepository : existsByDna(dna)
+DnaRepository --> MutantService : false
+MutantService -> DnaRepository : save(dna)
+MutantService --> Tester : ADN guardado
+
+Tester -> MutantService : Ejecutar testSaveDna_WhenDnaExists()
+MutantService -> DnaRepository : existsByDna(dna)
+DnaRepository --> MutantService : true
+MutantService --> Tester : ADN no guardado
+@enduml
+
+
